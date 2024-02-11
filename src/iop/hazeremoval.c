@@ -123,7 +123,7 @@ int flags()
 
 int default_group()
 {
-  return IOP_GROUP_CORRECT | IOP_GROUP_TECHNICAL;
+  return IOP_GROUP_REPAIR;
 }
 
 

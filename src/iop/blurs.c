@@ -102,7 +102,7 @@ int flags()
 
 int default_group()
 {
-  return IOP_GROUP_EFFECTS | IOP_GROUP_EFFECT;
+  return IOP_GROUP_SHARPNESS;
 }
 
 
