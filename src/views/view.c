@@ -935,7 +935,7 @@ void dt_view_toggle_selection(int imgid)
 /**
  * \brief Reset filter
  */
-void dt_view_filtering_reset(const dt_view_manager_t *vm, gboolean smart_filter)
+void dt_view_filter_reset(const dt_view_manager_t *vm, gboolean smart_filter)
 {
   if(vm->proxy.module_filtering.module && vm->proxy.module_filtering.reset_filter)
     vm->proxy.module_filtering.reset_filter(vm->proxy.module_filtering.module, smart_filter);

@@ -422,7 +422,7 @@ void dt_view_collection_update_history_state(const dt_view_manager_t *vm);
 /*
  * Filter dropdown proxy
  */
-void dt_view_filtering_reset(const dt_view_manager_t *vm, gboolean smart_filter);
+void dt_view_filter_reset(const dt_view_manager_t *vm, gboolean smart_filter);
 GtkWidget *dt_view_filter_get_filters_box(const dt_view_manager_t *vm);
 GtkWidget *dt_view_filter_get_sort_box(const dt_view_manager_t *vm);
 
