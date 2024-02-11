@@ -178,13 +178,36 @@ void _modulegroups_switch_tab_previous(dt_action_t *action)
 static gboolean _lib_modulegroups_scroll(GtkWidget *widget, GdkEventScroll *event, gpointer user_data)
 {
   int delta_x, delta_y;
+
+  // We will accumulate scrolls here
+  static int scrolls = 0;
+
   if(dt_gui_get_scroll_unit_deltas(event, &delta_x, &delta_y))
   {
-    uint32_t current = dt_dev_modulegroups_get(darktable.develop);
-    if(delta_x > 0 || delta_y > 0)
-      dt_dev_modulegroups_set(darktable.develop, _modulegroups_cycle_tabs(current + 1));
-    else if(delta_x < 0 || delta_y < 0)
-      dt_dev_modulegroups_set(darktable.develop, _modulegroups_cycle_tabs(current - 1));
+    int current = dt_dev_modulegroups_get(darktable.develop);
+    int future = 0;
+    if(delta_x > 0. || delta_y > 0.)
+      future = current + 1;
+    else if(delta_x < 0. || delta_y < 0.)
+      future = current - 1;
+
+    if(future < 0 || future > DT_MODULEGROUP_SIZE - 1)
+    {
+      // We reached the end of tabs. Allow cycling through, but add a little inertia to fight.
+      // This is to ensure user really wants to cycle through.
+      if(scrolls > 4)
+      {
+        scrolls = 0;
+      }
+      else
+      {
+        // Do nothing but increment
+        scrolls++;
+        return FALSE;
+      }
+    }
+
+    dt_dev_modulegroups_set(darktable.develop, _modulegroups_cycle_tabs(future));
     dt_iop_request_focus(NULL);
   }
 
@@ -226,7 +249,8 @@ void gui_init(dt_lib_module_t *self)
                                         _("Repair"),
                                         _("Sharpness"),
                                         _("Effects"),
-                                        _("Technics")};
+                                        _("Technics"),
+                                        _("All")};
   char *tooltips[DT_MODULEGROUP_SIZE] = { _("List all modules currently enabled in the reverse order of application in the pipeline."),
                                           _("Modules destined to adjust brightness, contrast and dynamic range."),
                                           _("Modules used when working with film scans."),
@@ -234,7 +258,8 @@ void gui_init(dt_lib_module_t *self)
                                           _("Modules destined to repair and reconstruct noisy or missing pixels."),
                                           _("Modules destined to manipulate local contrast, sharpness and blur."),
                                           _("Modules applying special effects."),
-                                          _("Technical modules that can be ignored in most situations.") };
+                                          _("Technical modules that can be ignored in most situations."),
+                                          _("All modules available in the software.") };
 
   for(int i = 0; i < DT_MODULEGROUP_SIZE; i++)
   {

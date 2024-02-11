@@ -1,3 +1,25 @@
+Anselization:
+Collection:
+  all until commit 43e4fce
+Modulegroups and others:
+  Commits:
+    cd3f1d3
+    dbabd51
+    32e8052 (Like darktable 3.2!)
+    cef8334
+    d813577
+    9934805
+    1004f69
+    19cf402
+    6e58fa3
+    19cf402
+    c809678
+    5ead9a4
+    192af7a
+    732342b
+    ed956d2
+    d5ec519
+
 We're proud to announce the new feature release of darktable, 4.0.1!
 
 The github release is here: [https://github.com/darktable-org/darktable/releases/tag/release-4.0.1](https://github.com/darktable-org/darktable/releases/tag/release-4.0.1).
