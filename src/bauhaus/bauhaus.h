@@ -84,8 +84,8 @@ typedef struct dt_bauhaus_slider_data_t
   float factor;         // multiplication factor before printing
   float offset;         // addition before printing
 
-  int is_dragging : 1;  // indicates is mouse is dragging slider
-  int is_changed : 1;   // indicates new data
+  uint32_t is_dragging : 1;  // indicates is mouse is dragging slider
+  uint32_t is_changed : 1;   // indicates new data
   guint timeout_handle; // used to store id of timeout routine
   float (*curve)(float, dt_bauhaus_curve_t); // callback function
 } dt_bauhaus_slider_data_t;

@@ -236,10 +236,9 @@ static int set_grad_from_points(struct dt_iop_module_t *self, float xa, float ya
     if(r1 * r2 < 0) break;
   } while(v2 <= M_PI);
 
-  if(v2 == M_PI) return 9;
-
   // set precision for the iterative check
   const float eps = .0001f;
+  if (fabs(v2 - M_PI_F) < eps) return 9;
 
   int iter = 0;
   do

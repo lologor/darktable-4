@@ -2913,7 +2913,7 @@ static void dt_bauhaus_slider_set_normalized(dt_bauhaus_widget_t *w, float pos)
   rpos = (rpos - d->min) / (d->max - d->min);
   d->pos = d->curve(rpos, DT_BAUHAUS_SET);
   gtk_widget_queue_draw(GTK_WIDGET(w));
-  d->is_changed = 1;
+  d->is_changed = 0b1;
 
   _bauhaus_slider_value_change(w);
 }

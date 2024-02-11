@@ -2108,19 +2108,19 @@ static int _control_import_image_copy(const char *filename,
   }
   else
   {
-#ifdef _WIN32
-    struct utimbuf times;
-    times.actime = statbuf.st_atime;
-    times.modtime = statbuf.st_mtime;
-    utime(output, &times); // set origin file timestamps
-#else
-    struct timeval times[2];
-    times[0].tv_sec = (long)statbuf.st_atim.tv_sec;
-    times[0].tv_usec = statbuf.st_atim.tv_nsec * 0.001;
-    times[1].tv_sec = (long)statbuf.st_mtim.tv_sec;
-    times[1].tv_usec = statbuf.st_mtim.tv_nsec * 0.001;
-    utimes(output, times); // set origin file timestamps
-#endif
+// #ifdef _WIN32
+//     struct utimbuf times;
+//     times.actime = statbuf.st_atime;
+//     times.modtime = statbuf.st_mtime;
+//     utime(output, &times); // set origin file timestamps
+// #else
+//     struct timeval times[2];
+//     times[0].tv_sec = (long)statbuf.st_atim.tv_sec;
+//     times[0].tv_usec = statbuf.st_atim.tv_nsec * 0.001;
+//     times[1].tv_sec = (long)statbuf.st_mtim.tv_sec;
+//     times[1].tv_usec = statbuf.st_mtim.tv_nsec * 0.001;
+//     utimes(output, times); // set origin file timestamps
+// #endif
 
     const int32_t imgid = dt_image_import(dt_import_session_film_id(session), output, FALSE, FALSE);
     if(!imgid) dt_control_log(_("error loading file `%s'"), output);
