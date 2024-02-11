@@ -80,6 +80,11 @@ extern "C" {
 
 #define DT_XMP_EXIF_VERSION 5
 
+#if EXIV2_TEST_VERSION(0,28,0)
+#define AnyError Error
+#define toLong toInt64
+#endif
+
 // persistent list of exiv2 tags. set up in dt_init()
 static GList *exiv2_taglist = NULL;
 
@@ -793,61 +798,6 @@ static void _find_datetime_taken(Exiv2::ExifData &exifData, Exiv2::ExifData::con
   }
 }
 
-static void _find_exif_maker(Exiv2::ExifData &exifData, Exiv2::ExifData::const_iterator pos, char *maker, const size_t m_size)
-{
-  // look for maker & model first so we can use that info later
-  if(FIND_EXIF_TAG("Exif.Image.Make"))
-  {
-    dt_strlcpy_to_utf8(maker, m_size, pos, exifData);
-  }
-  else if(FIND_EXIF_TAG("Exif.PanasonicRaw.Make"))
-  {
-    dt_strlcpy_to_utf8(maker, m_size, pos, exifData);
-  }
-
-  for(char *c = maker + m_size - 1; c > maker; c--)
-    if(*c != ' ' && *c != '\0')
-    {
-      *(c + 1) = '\0';
-      break;
-    }
-}
-
-static void _find_exif_model(Exiv2::ExifData &exifData, Exiv2::ExifData::const_iterator pos, char *model, const size_t m_size)
-{
-  if(FIND_EXIF_TAG("Exif.Image.Model"))
-  {
-    dt_strlcpy_to_utf8(model, m_size, pos, exifData);
-  }
-  else if(FIND_EXIF_TAG("Exif.PanasonicRaw.Model"))
-  {
-    dt_strlcpy_to_utf8(model, m_size, pos, exifData);
-  }
-
-  for(char *c = model + m_size - 1; c > model; c--)
-    if(*c != ' ' && *c != '\0')
-    {
-      *(c + 1) = '\0';
-      break;
-    }
-}
-
-static void _find_exif_makermodel(Exiv2::ExifData &exifData, Exiv2::ExifData::const_iterator pos, dt_image_basic_exif_t *basic_exif)
-{
-  char exif_maker[sizeof(basic_exif->maker)];
-  char exif_model[sizeof(basic_exif->model)];
-  char model[sizeof(basic_exif->model)];
-  exif_maker[0] = exif_model[0] = basic_exif->maker[0] = model[0] = basic_exif->model[0] = '\0';
-
-  // look for maker & model first so we can use that info later
-  _find_exif_maker(exifData, pos, exif_maker, sizeof(exif_maker));
-  _find_exif_model(exifData, pos, exif_model, sizeof(exif_model));
-  dt_imageio_lookup_makermodel(exif_maker, exif_model,
-                               basic_exif->maker, sizeof(basic_exif->maker),
-                               model, sizeof(model),
-                               basic_exif->model, sizeof(basic_exif->model));
-}
-
 static bool _exif_decode_exif_data(dt_image_t *img, Exiv2::ExifData &exifData)
 {
   try
@@ -855,8 +805,38 @@ static bool _exif_decode_exif_data(dt_image_t *img, Exiv2::ExifData &exifData)
     /* List of tag names taken from exiv2's printSummary() in actions.cpp */
     Exiv2::ExifData::const_iterator pos;
 
-    _find_exif_maker(exifData, pos, img->exif_maker, sizeof(img->exif_maker));
-    _find_exif_model(exifData, pos, img->exif_model, sizeof(img->exif_model));
+    // look for maker & model first so we can use that info later
+    if(FIND_EXIF_TAG("Exif.Image.Make"))
+    {
+      dt_strlcpy_to_utf8(img->exif_maker, sizeof(img->exif_maker), pos, exifData);
+    }
+    else if(FIND_EXIF_TAG("Exif.PanasonicRaw.Make"))
+    {
+      dt_strlcpy_to_utf8(img->exif_maker, sizeof(img->exif_maker), pos, exifData);
+    }
+
+    for(char *c = img->exif_maker + sizeof(img->exif_maker) - 1; c > img->exif_maker; c--)
+      if(*c != ' ' && *c != '\0')
+      {
+        *(c + 1) = '\0';
+        break;
+      }
+
+    if(FIND_EXIF_TAG("Exif.Image.Model"))
+    {
+      dt_strlcpy_to_utf8(img->exif_model, sizeof(img->exif_model), pos, exifData);
+    }
+    else if(FIND_EXIF_TAG("Exif.PanasonicRaw.Model"))
+    {
+      dt_strlcpy_to_utf8(img->exif_model, sizeof(img->exif_model), pos, exifData);
+    }
+
+    for(char *c = img->exif_model + sizeof(img->exif_model) - 1; c > img->exif_model; c--)
+      if(*c != ' ' && *c != '\0')
+      {
+        *(c + 1) = '\0';
+        break;
+      }
 
     // Make sure we copy the exif make and model to the correct place if needed
     dt_image_refresh_makermodel(img);
@@ -1141,14 +1121,10 @@ static bool _exif_decode_exif_data(dt_image_t *img, Exiv2::ExifData &exifData)
       dt_strlcpy_to_utf8(img->exif_lens, sizeof(img->exif_lens), pos, exifData);
     }
 
-    /* Use pretty name for Canon RF & RF-S lenses (as exiftool/exiv2/lensfun) */
+    /* Use pretty name for Canon RF lenses (as exiftool/exiv2/lensfun) */
     if(g_str_has_prefix(img->exif_lens, "RF"))
     {
-      char *pretty;
-      if(img->exif_lens[2] == '-')
-        pretty = g_strconcat("Canon RF-S ", &img->exif_lens[4], (char *)NULL);
-      else
-        pretty = g_strconcat("Canon RF ", &img->exif_lens[2], (char *)NULL);
+      char *pretty = g_strconcat("Canon RF ", &img->exif_lens[2], (char *)NULL);
       g_strlcpy(img->exif_lens, pretty, sizeof(img->exif_lens));
       g_free(pretty);
     }
@@ -2580,39 +2556,39 @@ static GList *read_history_v2(Exiv2::XmpData &xmpData, const char *filename)
       if(g_str_has_prefix(key_iter, "darktable:operation"))
       {
         current_entry->have_operation = TRUE;
-        current_entry->operation = g_strdup(history->value().toString().c_str());
+        current_entry->operation = g_strdup(history->toString().c_str());
       }
       else if(g_str_has_prefix(key_iter, "darktable:num"))
       {
-        current_entry->num = history->value().toLong();
+        current_entry->num = history->toLong();
       }
       else if(g_str_has_prefix(key_iter, "darktable:enabled"))
       {
-        current_entry->enabled = history->value().toLong() == 1;
+        current_entry->enabled = history->toLong() == 1;
       }
       else if(g_str_has_prefix(key_iter, "darktable:modversion"))
       {
         current_entry->have_modversion = TRUE;
-        current_entry->modversion = history->value().toLong();
+        current_entry->modversion = history->toLong();
       }
       else if(g_str_has_prefix(key_iter, "darktable:params"))
       {
         current_entry->have_params = TRUE;
-        current_entry->params = dt_exif_xmp_decode(history->value().toString().c_str(), history->value().size(),
+        current_entry->params = dt_exif_xmp_decode(history->toString().c_str(), history->size(),
                                                    &current_entry->params_len);
       }
       else if(g_str_has_prefix(key_iter, "darktable:multi_name"))
       {
-        current_entry->multi_name = g_strdup(history->value().toString().c_str());
+        current_entry->multi_name = g_strdup(history->toString().c_str());
       }
       else if(g_str_has_prefix(key_iter, "darktable:multi_priority"))
       {
-        current_entry->multi_priority = history->value().toLong();
+        current_entry->multi_priority = history->toLong();
       }
       else if(g_str_has_prefix(key_iter, "darktable:iop_order"))
       {
         // we ensure reading the iop_order as a high precision float
-        string str = g_strdup(history->value().toString().c_str());
+        string str = g_strdup(history->toString().c_str());
         static const std::locale& c_locale = std::locale("C");
         std::istringstream istring(str);
         istring.imbue(c_locale);
@@ -2620,12 +2596,12 @@ static GList *read_history_v2(Exiv2::XmpData &xmpData, const char *filename)
       }
       else if(g_str_has_prefix(key_iter, "darktable:blendop_version"))
       {
-        current_entry->blendop_version = history->value().toLong();
+        current_entry->blendop_version = history->toLong();
       }
       else if(g_str_has_prefix(key_iter, "darktable:blendop_params"))
       {
-        current_entry->blendop_params = dt_exif_xmp_decode(history->value().toString().c_str(),
-                                                           history->value().size(),
+        current_entry->blendop_params = dt_exif_xmp_decode(history->toString().c_str(),
+                                                           history->size(),
                                                            &current_entry->blendop_params_len);
       }
     }
@@ -2780,35 +2756,35 @@ static GList *read_masks_v3(Exiv2::XmpData &xmpData, const char *filename, const
       // go on reading things into current_entry
       if(g_str_has_prefix(key_iter, "darktable:mask_num"))
       {
-        current_entry->mask_num = history->value().toLong();
+        current_entry->mask_num = history->toLong();
       }
       else if(g_str_has_prefix(key_iter, "darktable:mask_id"))
       {
-        current_entry->mask_id = history->value().toLong();
+        current_entry->mask_id = history->toLong();
       }
       else if(g_str_has_prefix(key_iter, "darktable:mask_type"))
       {
-        current_entry->mask_type = history->value().toLong();
+        current_entry->mask_type = history->toLong();
       }
       else if(g_str_has_prefix(key_iter, "darktable:mask_name"))
       {
-        current_entry->mask_name = g_strdup(history->value().toString().c_str());
+        current_entry->mask_name = g_strdup(history->toString().c_str());
       }
       else if(g_str_has_prefix(key_iter, "darktable:mask_version"))
       {
-        current_entry->mask_version = history->value().toLong();
+        current_entry->mask_version = history->toLong();
       }
       else if(g_str_has_prefix(key_iter, "darktable:mask_points"))
       {
-        current_entry->mask_points = dt_exif_xmp_decode(history->value().toString().c_str(), history->value().size(), &current_entry->mask_points_len);
+        current_entry->mask_points = dt_exif_xmp_decode(history->toString().c_str(), history->size(), &current_entry->mask_points_len);
       }
       else if(g_str_has_prefix(key_iter, "darktable:mask_nb"))
       {
-        current_entry->mask_nb = history->value().toLong();
+        current_entry->mask_nb = history->toLong();
       }
       else if(g_str_has_prefix(key_iter, "darktable:mask_src"))
       {
-        current_entry->mask_src = dt_exif_xmp_decode(history->value().toString().c_str(), history->value().size(), &current_entry->mask_src_len);
+        current_entry->mask_src = dt_exif_xmp_decode(history->toString().c_str(), history->size(), &current_entry->mask_src_len);
       }
 
     }
@@ -2908,11 +2884,6 @@ static gboolean _image_altered_deprecated(const uint32_t imgid)
 {
   sqlite3_stmt *stmt;
 
-  const gboolean basecurve_auto_apply =
-    dt_conf_is_equal("plugins/darkroom/workflow", "display-referred");
-
-  const gboolean sharpen_auto_apply = dt_conf_get_bool("plugins/darkroom/sharpen/auto_apply");
-
   char query[1024] = { 0 };
 
   // clang-format off
@@ -2921,9 +2892,7 @@ static gboolean _image_altered_deprecated(const uint32_t imgid)
            " FROM main.history, main.images"
            " WHERE id=?1 AND imgid=id AND num<history_end AND enabled=1"
            "       AND operation NOT IN ('flip', 'dither', 'highlights', 'rawprepare',"
-           "                             'colorin', 'colorout', 'gamma', 'demosaic', 'temperature'%s%s)",
-           basecurve_auto_apply ? ", 'basecurve'" : "",
-           sharpen_auto_apply ? ", 'sharpen'" : "");
+           "                             'colorin', 'colorout', 'gamma', 'demosaic', 'temperature')");
   // clang-format on
 
   DT_DEBUG_SQLITE3_PREPARE_V2(dt_database_get(darktable.db), query, -1, &stmt, NULL);
@@ -3985,7 +3954,11 @@ char *dt_exif_xmp_read_string(const int imgid)
       std::string xmpPacket;
 
       Exiv2::DataBuf buf = Exiv2::readFile(WIDEN(input_filename));
+#if EXIV2_TEST_VERSION(0,28,0)
+      xmpPacket.assign(buf.c_str(), buf.size());
+#else
       xmpPacket.assign(reinterpret_cast<char *>(buf.pData_), buf.size_);
+#endif
       Exiv2::XmpParser::decode(xmpData, xmpPacket);
       // because XmpSeq or XmpBag are added to the list, we first have
       // to remove these so that we don't end up with a string of duplicates
@@ -4001,7 +3974,11 @@ char *dt_exif_xmp_read_string(const int imgid)
       std::string xmpPacket;
 
       Exiv2::DataBuf buf = Exiv2::readFile(WIDEN(input_filename));
+#if EXIV2_TEST_VERSION(0,28,0)
+      xmpPacket.assign(buf.c_str(), buf.size());
+#else
       xmpPacket.assign(reinterpret_cast<char *>(buf.pData_), buf.size_);
+#endif
       Exiv2::XmpParser::decode(sidecarXmpData, xmpPacket);
 
       for(Exiv2::XmpData::const_iterator it = sidecarXmpData.begin(); it != sidecarXmpData.end(); ++it)
@@ -4129,7 +4106,11 @@ int dt_exif_xmp_attach_export(const int imgid, const char *filename, void *metad
       std::string xmpPacket;
 
       Exiv2::DataBuf buf = Exiv2::readFile(WIDEN(input_filename));
+#if EXIV2_TEST_VERSION(0,28,0)
+      xmpPacket.assign(buf.c_str(), buf.size());
+#else
       xmpPacket.assign(reinterpret_cast<char *>(buf.pData_), buf.size_);
+#endif
       Exiv2::XmpParser::decode(sidecarXmpData, xmpPacket);
 
       for(Exiv2::XmpData::const_iterator it = sidecarXmpData.begin(); it != sidecarXmpData.end(); ++it)
@@ -4296,7 +4277,7 @@ int dt_exif_xmp_attach_export(const int imgid, const char *filename, void *metad
     catch(Exiv2::AnyError &e)
     {
 #if EXIV2_TEST_VERSION(0,27,0)
-      if(e.code() == Exiv2::kerTooLargeJpegSegment)
+      if(e.code() == Exiv2::ErrorCode::kerTooLargeJpegSegment)
 #else
       if(e.code() == 37)
 #endif
@@ -4362,7 +4343,11 @@ int dt_exif_xmp_write(const int imgid, const char *filename)
       }
 
       Exiv2::DataBuf buf = Exiv2::readFile(WIDEN(filename));
+#if EXIV2_TEST_VERSION(0,28,0)
+      xmpPacket.assign(buf.c_str(), buf.size());
+#else
       xmpPacket.assign(reinterpret_cast<char *>(buf.pData_), buf.size_);
+#endif
       Exiv2::XmpParser::decode(xmpData, xmpPacket);
       // because XmpSeq or XmpBag are added to the list, we first have
       // to remove these so that we don't end up with a string of duplicates
@@ -4469,7 +4454,7 @@ dt_colorspaces_color_profile_type_t dt_exif_get_color_space(const uint8_t *data,
   }
 }
 
-void dt_exif_get_basic_data(const uint8_t *data, size_t size, dt_image_basic_exif_t *basic_exif)
+void dt_exif_get_datetime_taken(const uint8_t *data, size_t size, char *datetime_taken)
 {
   try
   {
@@ -4478,13 +4463,12 @@ void dt_exif_get_basic_data(const uint8_t *data, size_t size, dt_image_basic_exi
     read_metadata_threadsafe(image);
     Exiv2::ExifData &exifData = image->exifData();
 
-    _find_datetime_taken(exifData, pos, basic_exif->datetime);
-    _find_exif_makermodel(exifData, pos, basic_exif);
+    _find_datetime_taken(exifData, pos, datetime_taken);
   }
   catch(Exiv2::AnyError &e)
   {
     std::string s(e.what());
-    std::cerr << "[exiv2 dt_exif_get_basic_data] " << s << std::endl;
+    std::cerr << "[exiv2 dt_exif_get_datetime_taken] " << s << std::endl;
   }
 }
 
