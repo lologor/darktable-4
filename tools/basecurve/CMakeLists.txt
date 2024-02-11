@@ -9,32 +9,32 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND Exiv2_VERSION VERSION_GREATER_EQUAL
     set(CMAKE_CXX_STANDARD 17)
 endif()
 
-add_executable(ansel-curve-tool ansel-curve-tool.c exif-wrapper.cpp)
+add_executable(darktable-curve-tool darktable-curve-tool.c exif-wrapper.cpp)
 if (OPENMP_FOUND)
-    set_target_properties(ansel-curve-tool PROPERTIES COMPILE_FLAGS ${OpenMP_CXX_FLAGS})
+    set_target_properties(darktable-curve-tool PROPERTIES COMPILE_FLAGS ${OpenMP_CXX_FLAGS})
     if(OpenMP_CXX_INCLUDE_DIRS)
         include_directories(${OpenMP_CXX_INCLUDE_DIRS})
     endif()
 endif()
-target_link_libraries(ansel-curve-tool ${Exiv2_LIBRARY} ${OpenMP_CXX_LIBRARIES} m)
+target_link_libraries(darktable-curve-tool ${Exiv2_LIBRARY} ${OpenMP_CXX_LIBRARIES} m)
 
 configure_file(README.cmake.md README.md)
 
 install(TARGETS
-            ansel-curve-tool
+            darktable-curve-tool
         RUNTIME DESTINATION
-            ${CMAKE_INSTALL_LIBEXECDIR}/ansel/tools)
+            ${CMAKE_INSTALL_LIBEXECDIR}/darktable/tools)
 
 install(PROGRAMS
-            ansel-curve-tool-helper
+            darktable-curve-tool-helper
         DESTINATION
-            ${CMAKE_INSTALL_LIBEXECDIR}/ansel/tools)
+            ${CMAKE_INSTALL_LIBEXECDIR}/darktable/tools)
 
 
 install(FILES
             plot.basecurve plot.tonecurve
         DESTINATION
-            ${CMAKE_INSTALL_DATAROOTDIR}/ansel/tools/basecurve/)
+            ${CMAKE_INSTALL_DATAROOTDIR}/darktable/tools/basecurve/)
 install(FILES
             ${CMAKE_CURRENT_BINARY_DIR}/README.md
         RENAME
