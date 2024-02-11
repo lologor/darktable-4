@@ -2313,14 +2313,6 @@ void dt_dev_modulegroups_set(dt_develop_t *dev, uint32_t group)
     dev->proxy.modulegroups.set(dev->proxy.modulegroups.module, group);
 }
 
-uint32_t dt_dev_modulegroups_get_activated(dt_develop_t *dev)
-{
-  if(dev->proxy.modulegroups.module && dev->proxy.modulegroups.get_activated)
-    return dev->proxy.modulegroups.get_activated(dev->proxy.modulegroups.module);
-
-  return 0;
-}
-
 uint32_t dt_dev_modulegroups_get(dt_develop_t *dev)
 {
   if(dev->proxy.modulegroups.module && dev->proxy.modulegroups.get)
@@ -2329,10 +2321,10 @@ uint32_t dt_dev_modulegroups_get(dt_develop_t *dev)
   return 0;
 }
 
-gboolean dt_dev_modulegroups_test(dt_develop_t *dev, uint32_t group, dt_iop_module_t *module)
+gboolean dt_dev_modulegroups_test(dt_develop_t *dev, uint32_t group, uint32_t iop_group)
 {
   if(dev->proxy.modulegroups.module && dev->proxy.modulegroups.test)
-    return dev->proxy.modulegroups.test(dev->proxy.modulegroups.module, group, module);
+    return dev->proxy.modulegroups.test(dev->proxy.modulegroups.module, group, iop_group);
   return FALSE;
 }
 
@@ -2348,24 +2340,18 @@ void dt_dev_modulegroups_update_visibility(dt_develop_t *dev)
     dev->proxy.modulegroups.update_visibility(dev->proxy.modulegroups.module);
 }
 
-void dt_dev_modulegroups_search_text_focus(dt_develop_t *dev)
-{
-  if(dev->proxy.modulegroups.module && dev->proxy.modulegroups.search_text_focus && dev->first_load == 0)
-    dev->proxy.modulegroups.search_text_focus(dev->proxy.modulegroups.module);
-}
-
-gboolean dt_dev_modulegroups_is_visible(dt_develop_t *dev, gchar *module)
+gboolean dt_dev_modulegroups_is_visible(dt_develop_t *dev,
+                                        gchar *module)
 {
   if(dev->proxy.modulegroups.module && dev->proxy.modulegroups.test_visible)
     return dev->proxy.modulegroups.test_visible(dev->proxy.modulegroups.module, module);
   return FALSE;
 }
 
-int dt_dev_modulegroups_basics_module_toggle(dt_develop_t *dev, GtkWidget *widget, gboolean doit)
+void dt_dev_modulegroups_search_text_focus(dt_develop_t *dev)
 {
-  if(dev->proxy.modulegroups.module && dev->proxy.modulegroups.basics_module_toggle)
-    return dev->proxy.modulegroups.basics_module_toggle(dev->proxy.modulegroups.module, widget, doit);
-  return 0;
+  if(dev->proxy.modulegroups.module && dev->proxy.modulegroups.search_text_focus && dev->first_load == 0)
+    dev->proxy.modulegroups.search_text_focus(dev->proxy.modulegroups.module);
 }
 
 void dt_dev_masks_list_change(dt_develop_t *dev)
