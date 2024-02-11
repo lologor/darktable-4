@@ -154,5 +154,5 @@ combobox window *:hover
 #modules-tabs notebook:disabled tab:checked label
 {
   border-bottom: none;
-  color: @grey_85;
+  color: @grey_65;
 }

@@ -135,22 +135,24 @@ static gboolean _text_entry_key_press_callback(GtkWidget *widget, GdkEventKey *e
   return FALSE;
 }
 
-void view_leave(dt_lib_module_t *self, dt_view_t *old_view, dt_view_t *new_view)
+int _modulegroups_cycle_tabs(int user_set_group)
 {
-  if(!strcmp(old_view->module_name, "darkroom"))
+  int group;
+  if(user_set_group < 0)
   {
-    //dt_lib_modulegroups_t *d = (dt_lib_modulegroups_t *)self->data;
-    // FIXME: disconnect actions
+    // cycle to the end
+    group = DT_MODULEGROUP_SIZE - 1;
   }
-}
-
-void view_enter(dt_lib_module_t *self, dt_view_t *old_view, dt_view_t *new_view)
-{
-  if(!strcmp(new_view->module_name, "darkroom"))
+  else if(user_set_group >= DT_MODULEGROUP_SIZE)
   {
-    //dt_lib_modulegroups_t *d = (dt_lib_modulegroups_t *)self->data;
-    // FIXME: connect actions
+    // cycle to the beginning
+    group = 0;
   }
+  else
+  {
+    group = user_set_group;
+  }
+  return group;
 }
 
 void _modulegroups_switch_tab_next(dt_action_t *action)
@@ -159,7 +161,7 @@ void _modulegroups_switch_tab_next(dt_action_t *action)
   if(focused) dt_iop_gui_set_expanded(focused, FALSE, TRUE);
 
   uint32_t current = dt_dev_modulegroups_get(darktable.develop);
-  dt_dev_modulegroups_set(darktable.develop, current + 1);
+  dt_dev_modulegroups_set(darktable.develop, _modulegroups_cycle_tabs(current + 1));
   dt_iop_request_focus(NULL);
 }
 
@@ -169,8 +171,24 @@ void _modulegroups_switch_tab_previous(dt_action_t *action)
   if(focused) dt_iop_gui_set_expanded(focused, FALSE, TRUE);
 
   uint32_t current = dt_dev_modulegroups_get(darktable.develop);
-  dt_dev_modulegroups_set(darktable.develop, current - 1);
+  dt_dev_modulegroups_set(darktable.develop, _modulegroups_cycle_tabs(current - 1));
   dt_iop_request_focus(NULL);
+}
+
+static gboolean _lib_modulegroups_scroll(GtkWidget *widget, GdkEventScroll *event, gpointer user_data)
+{
+  int delta_x, delta_y;
+  if(dt_gui_get_scroll_unit_deltas(event, &delta_x, &delta_y))
+  {
+    uint32_t current = dt_dev_modulegroups_get(darktable.develop);
+    if(delta_x > 0 || delta_y > 0)
+      dt_dev_modulegroups_set(darktable.develop, _modulegroups_cycle_tabs(current + 1));
+    else if(delta_x < 0 || delta_y < 0)
+      dt_dev_modulegroups_set(darktable.develop, _modulegroups_cycle_tabs(current - 1));
+    dt_iop_request_focus(NULL);
+  }
+
+  return TRUE;
 }
 
 void gui_init(dt_lib_module_t *self)
@@ -185,11 +203,11 @@ void gui_init(dt_lib_module_t *self)
 
   /* search box */
   d->hbox_search_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-  d->text_entry = gtk_entry_new();
+  d->text_entry = gtk_search_entry_new();
   gtk_entry_set_placeholder_text(GTK_ENTRY(d->text_entry), _("Search a module…"));
   gtk_widget_add_events(d->text_entry, GDK_FOCUS_CHANGE_MASK);
   gtk_widget_add_events(d->text_entry, GDK_KEY_PRESS_MASK);
-  g_signal_connect(G_OBJECT(d->text_entry), "changed", G_CALLBACK(_text_entry_changed_callback), self);
+  g_signal_connect(G_OBJECT(d->text_entry), "search-changed", G_CALLBACK(_text_entry_changed_callback), self);
   g_signal_connect(G_OBJECT(d->text_entry), "icon-press", G_CALLBACK(_text_entry_icon_press_callback), self);
   g_signal_connect(G_OBJECT(d->text_entry), "key-press-event", G_CALLBACK(_text_entry_key_press_callback), self);
   gtk_box_pack_start(GTK_BOX(d->hbox_search_box), d->text_entry, TRUE, TRUE, 0);
@@ -201,7 +219,7 @@ void gui_init(dt_lib_module_t *self)
 
   /* Tabs */
   d->notebook = GTK_WIDGET(gtk_notebook_new());
-  char *labels[DT_MODULEGROUP_SIZE] = { _("Enabled"),
+  char *labels[DT_MODULEGROUP_SIZE] = { _("Pipeline"),
                                         _("Tones"),
                                         _("Film"),
                                         _("Color"),
@@ -228,6 +246,8 @@ void gui_init(dt_lib_module_t *self)
   gtk_notebook_popup_enable(GTK_NOTEBOOK(d->notebook));
   gtk_notebook_set_scrollable(GTK_NOTEBOOK(d->notebook), TRUE);
   g_signal_connect(G_OBJECT(d->notebook), "switch_page", G_CALLBACK(_lib_modulegroups_toggle), self);
+  g_signal_connect(G_OBJECT(d->notebook), "scroll-event", G_CALLBACK(_lib_modulegroups_scroll), self);
+  gtk_widget_add_events(GTK_WIDGET(d->notebook), darktable.gui->scroll_mask);
 
   gtk_box_pack_start(GTK_BOX(self->widget), GTK_WIDGET(d->notebook), TRUE, TRUE, 0);
 
@@ -245,8 +265,8 @@ void gui_init(dt_lib_module_t *self)
   darktable.develop->proxy.modulegroups.search_text_focus = _lib_modulegroups_search_text_focus;
 
   /* Bloody accels from the great MIDI turducken */
-  dt_action_register(DT_ACTION(self), N_("move the next modules tab"), _modulegroups_switch_tab_next, GDK_KEY_Tab, GDK_CONTROL_MASK);
-  dt_action_register(DT_ACTION(self), N_("move the previous modules tab"), _modulegroups_switch_tab_previous, GDK_KEY_Tab, GDK_CONTROL_MASK | GDK_SHIFT_MASK);
+  dt_action_register(DT_ACTION(self), N_("move to the next modules tab"), _modulegroups_switch_tab_next, GDK_KEY_Tab, GDK_CONTROL_MASK);
+  dt_action_register(DT_ACTION(self), N_("move to the previous modules tab"), _modulegroups_switch_tab_previous, GDK_KEY_Tab, GDK_CONTROL_MASK | GDK_SHIFT_MASK);
 
   /* let's connect to view changed signal to set default group */
   dt_control_signal_connect(darktable.signals, DT_SIGNAL_VIEWMANAGER_VIEW_CHANGED,
@@ -255,10 +275,6 @@ void gui_init(dt_lib_module_t *self)
 
 void gui_cleanup(dt_lib_module_t *self)
 {
-  // dt_lib_modulegroups_t *d = (dt_lib_modulegroups_t *)self->data;
-  // FIXME : dt_gui_key_accel_block_on_focus_disconnect(d->text_entry);
-
-  /* let's not listen to signals anymore.. */
   dt_control_signal_disconnect(darktable.signals, G_CALLBACK(_lib_modulegroups_viewchanged_callback), self);
 
   darktable.develop->proxy.modulegroups.module = NULL;
@@ -295,10 +311,7 @@ static gboolean _lib_modulesgroups_search_active(const gchar *text_entered, dt_i
       const int is_match_alias = (g_strstr_len(g_utf8_casefold(dt_iop_get_localized_aliases(module->op), -1), -1,
                                           g_utf8_casefold(text_entered, -1))
                                 != NULL);
-      if(is_match_name || is_match_alias)
-        gtk_widget_show(w);
-      else
-        gtk_widget_hide(w);
+      gtk_widget_set_visible(w, (is_match_name || is_match_alias));
     }
     is_handled = TRUE;
   }
@@ -418,7 +431,6 @@ typedef struct _set_gui_thread_t
 static gboolean _lib_modulegroups_set_gui_thread(gpointer user_data)
 {
   _set_gui_thread_t *params = (_set_gui_thread_t *)user_data;
-
   dt_lib_modulegroups_t *d = (dt_lib_modulegroups_t *)params->self->data;
 
   /* set current group and update visibility */
@@ -436,9 +448,7 @@ static gboolean _lib_modulegroups_set_gui_thread(gpointer user_data)
 static gboolean _lib_modulegroups_upd_gui_thread(gpointer user_data)
 {
   _set_gui_thread_t *params = (_set_gui_thread_t *)user_data;
-
   _lib_modulegroups_update_iop_visibility(params->self);
-
   free(params);
   return FALSE;
 }
