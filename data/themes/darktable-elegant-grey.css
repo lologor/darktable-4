@@ -120,3 +120,39 @@ combobox window *:hover
 {
   background-image: linear-gradient(rgba(241, 241, 241, 0.7) 0%, rgba(241, 241, 241, 0.7) 90%,rgba(241, 241, 241, 0) 100%);  /* rgb color needs to be set to same color as #thumb_back hover background */
 }
+
+/* Ansel tabs */
+#search-box entry placeholder {
+  color: @grey_25;
+}
+
+#modules-tabs notebook tab label
+{
+  padding: 0.25em;
+  font-size: 1.25em;
+  color: @grey_85;
+}
+
+#modules-tabs notebook header, #modules-tabs notebook
+{
+  margin-bottom: 0;
+}
+
+#modules-tabs notebook tab:hover label
+{
+  border-bottom: 0.1em solid @grey_95;
+  color: @grey_95;
+}
+
+
+#modules-tabs notebook tab:checked label
+{
+  border-bottom: 0.1em solid @grey_100;
+  color: @grey_100;
+}
+
+#modules-tabs notebook:disabled tab:checked label
+{
+  border-bottom: none;
+  color: @grey_85;
+}
