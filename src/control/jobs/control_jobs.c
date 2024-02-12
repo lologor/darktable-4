@@ -159,7 +159,7 @@ static int32_t _generic_dt_control_fileop_images_job_run(dt_job_t *job,
   {
     char collect[1024];
     snprintf(collect, sizeof(collect), "1:0:0:%s$", new_film.dirname);
-    dt_collection_deserialize(collect, FALSE);
+    dt_collection_deserialize(collect);
   }
   dt_film_remove_empty();
   DT_DEBUG_CONTROL_SIGNAL_RAISE(darktable.signals, DT_SIGNAL_FILMROLLS_CHANGED);

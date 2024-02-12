@@ -19,6 +19,15 @@ Modulegroups and others:
     732342b
     ed956d2
     d5ec519
+Flter:
+    17888dc (main commit!)
+    e288737
+    fbccd14
+    1d38ee8 (only filter.c)
+    e855be8
+    31d406c (only filter.c)
+    bb7e96c
+    7556d9f
 
 We're proud to announce the new feature release of darktable, 4.0.1!
 

@@ -937,21 +937,8 @@ void dt_view_toggle_selection(int imgid)
  */
 void dt_view_filter_reset(const dt_view_manager_t *vm, gboolean smart_filter)
 {
-  if(vm->proxy.module_filtering.module && vm->proxy.module_filtering.reset_filter)
-    vm->proxy.module_filtering.reset_filter(vm->proxy.module_filtering.module, smart_filter);
-}
-
-GtkWidget *dt_view_filter_get_filters_box(const dt_view_manager_t *vm)
-{
-  if(vm->proxy.filter.module && vm->proxy.filter.get_filter_box)
-    return vm->proxy.filter.get_filter_box(vm->proxy.filter.module);
-  return NULL;
-}
-GtkWidget *dt_view_filter_get_sort_box(const dt_view_manager_t *vm)
-{
-  if(vm->proxy.filter.module && vm->proxy.filter.get_sort_box)
-    return vm->proxy.filter.get_sort_box(vm->proxy.filter.module);
-  return NULL;
+  if(vm->proxy.filter.module && vm->proxy.filter.reset_filter)
+    vm->proxy.filter.reset_filter(vm->proxy.filter.module, smart_filter);
 }
 
 void dt_view_active_images_reset(gboolean raise)
@@ -1053,25 +1040,12 @@ void dt_view_lighttable_change_offset(dt_view_manager_t *vm, gboolean reset, gin
     vm->proxy.lighttable.change_offset(vm->proxy.lighttable.view, reset, imgid);
 }
 
-void dt_view_collection_update(const dt_view_manager_t *vm)
-{
-  if(vm->proxy.module_filtering.module) vm->proxy.module_filtering.update(vm->proxy.module_filtering.module);
-  if(vm->proxy.module_collect.module)
-    vm->proxy.module_collect.update(vm->proxy.module_collect.module);
-}
-
 void dt_view_collection_update_history_state(const dt_view_manager_t *vm)
 {
   if(vm->proxy.module_recentcollect.module)
     vm->proxy.module_recentcollect.update_visibility(vm->proxy.module_recentcollect.module);
   if(vm->proxy.module_collect.module)
     vm->proxy.module_collect.update_history_visibility(vm->proxy.module_collect.module);
-}
-
-void dt_view_filtering_set_sort(const dt_view_manager_t *vm, int sort, gboolean asc)
-{
-  if(vm->proxy.module_filtering.module)
-    vm->proxy.module_filtering.set_sort(vm->proxy.module_filtering.module, sort, asc);
 }
 
 int32_t dt_view_tethering_get_selected_imgid(const dt_view_manager_t *vm)
