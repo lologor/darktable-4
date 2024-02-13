@@ -18,7 +18,7 @@ cd "$scriptDir"/
 # Define base variables
 buildDir="../../build/macosx"
 dtPackageDir="$buildDir"/package
-dtAppName="darktable"
+dtAppName="Darktable"
 dtWorkingDir="$dtPackageDir"/"$dtAppName".app
 dtResourcesDir="$dtWorkingDir"/Contents/Resources
 dtExecDir="$dtWorkingDir"/Contents/MacOS
