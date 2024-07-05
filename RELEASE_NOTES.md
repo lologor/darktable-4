@@ -28,6 +28,9 @@ Flter:
     31d406c (only filter.c)
     bb7e96c
     7556d9f
+Recent collection:
+    1bdf797
+    
 
 We're proud to announce the new feature release of darktable, 4.0.1!
 
